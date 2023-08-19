@@ -1,5 +1,5 @@
 import json
-from typing import Any, Coroutine, Generic, List, Optional, TypeVar, Union, overload
+from typing import Any, Coroutine, Generic, List, Optional, TypeVar, Union
 
 import pydantic
 from taskiq import AsyncBroker, AsyncTaskiqTask
@@ -12,7 +12,8 @@ from taskiq_pipelines.steps import FilterStep, MapperStep, SequentialStep, parse
 
 _ReturnType = TypeVar("_ReturnType")
 _FuncParams = ParamSpec("_FuncParams")
-_T2 = TypeVar("_T2")
+_AnyOverloadType = TypeVar("_AnyOverloadType", bound="Union[Any, Coroutine[Any, Any, Any]]")
+_FilterOverloadType = TypeVar("_FilterOverloadType", bound="Union[bool, Coroutine[Any, Any, bool]]")
 
 
 class DumpedStep(pydantic.BaseModel):
@@ -51,39 +52,15 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
         if task:
             self.call_next(task)
 
-    @overload
     def call_next(
         self: "Pipeline[_FuncParams, _ReturnType]",
         task: Union[
-            AsyncKicker[Any, Coroutine[Any, Any, _T2]],
-            AsyncTaskiqDecoratedTask[Any, Coroutine[Any, Any, _T2]],
+            AsyncKicker[Any, _AnyOverloadType],
+            AsyncTaskiqDecoratedTask[Any, _AnyOverloadType],
         ],
         param_name: Optional[str] = None,
         **additional_kwargs: Any,
-    ) -> "Pipeline[_FuncParams, _T2]":
-        ...
-
-    @overload
-    def call_next(
-        self: "Pipeline[_FuncParams, _ReturnType]",
-        task: Union[
-            AsyncKicker[Any, _T2],
-            AsyncTaskiqDecoratedTask[Any, _T2],
-        ],
-        param_name: Optional[str] = None,
-        **additional_kwargs: Any,
-    ) -> "Pipeline[_FuncParams, _T2]":
-        ...
-
-    def call_next(
-        self,
-        task: Union[
-            AsyncKicker[Any, Any],
-            AsyncTaskiqDecoratedTask[Any, Any],
-        ],
-        param_name: Optional[str] = None,
-        **additional_kwargs: Any,
-    ) -> Any:
+    ) -> "Pipeline[_FuncParams, _AnyOverloadType]":
         """
         Adds sequential step.
 
@@ -109,47 +86,19 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
                 task_id="",
             ),
         )
-        return self
+        return self  # type: ignore[return-value]
 
-    @overload
     def map(
         self: "Pipeline[_FuncParams, _ReturnType]",
         task: Union[
-            AsyncKicker[Any, Coroutine[Any, Any, _T2]],
-            AsyncTaskiqDecoratedTask[Any, Coroutine[Any, Any, _T2]],
+            AsyncKicker[Any, _AnyOverloadType],
+            AsyncTaskiqDecoratedTask[Any, _AnyOverloadType],
         ],
         param_name: Optional[str] = None,
         skip_errors: bool = False,
         check_interval: float = 0.5,
         **additional_kwargs: Any,
-    ) -> "Pipeline[_FuncParams, List[_T2]]":
-        ...
-
-    @overload
-    def map(
-        self: "Pipeline[_FuncParams, _ReturnType]",
-        task: Union[
-            AsyncKicker[Any, _T2],
-            AsyncTaskiqDecoratedTask[Any, _T2],
-        ],
-        param_name: Optional[str] = None,
-        skip_errors: bool = False,
-        check_interval: float = 0.5,
-        **additional_kwargs: Any,
-    ) -> "Pipeline[_FuncParams, List[_T2]]":
-        ...
-
-    def map(
-        self,
-        task: Union[
-            AsyncKicker[Any, Any],
-            AsyncTaskiqDecoratedTask[Any, Any],
-        ],
-        param_name: Optional[str] = None,
-        skip_errors: bool = False,
-        check_interval: float = 0.5,
-        **additional_kwargs: Any,
-    ) -> Any:
+    ) -> "Pipeline[_FuncParams, List[_AnyOverloadType]]":
         """
         Create new map task.
 
@@ -180,47 +129,19 @@ class Pipeline(Generic[_FuncParams, _ReturnType]):
                 task_id="",
             ),
         )
-        return self
+        return self  # type: ignore[return-value]
 
-    @overload
     def filter(
         self: "Pipeline[_FuncParams, _ReturnType]",
         task: Union[
-            AsyncKicker[Any, Coroutine[Any, Any, bool]],
-            AsyncTaskiqDecoratedTask[Any, Coroutine[Any, Any, bool]],
+            AsyncKicker[Any, _FilterOverloadType],
+            AsyncTaskiqDecoratedTask[Any, _FilterOverloadType],
         ],
         param_name: Optional[str] = None,
         skip_errors: bool = False,
         check_interval: float = 0.5,
         **additional_kwargs: Any,
     ) -> "Pipeline[_FuncParams, _ReturnType]":
-        ...
-
-    @overload
-    def filter(
-        self: "Pipeline[_FuncParams, _ReturnType]",
-        task: Union[
-            AsyncKicker[Any, bool],
-            AsyncTaskiqDecoratedTask[Any, bool],
-        ],
-        param_name: Optional[str] = None,
-        skip_errors: bool = False,
-        check_interval: float = 0.5,
-        **additional_kwargs: Any,
-    ) -> "Pipeline[_FuncParams, _ReturnType]":
-        ...
-
-    def filter(
-        self,
-        task: Union[
-            AsyncKicker[Any, Any],
-            AsyncTaskiqDecoratedTask[Any, Any],
-        ],
-        param_name: Optional[str] = None,
-        skip_errors: bool = False,
-        check_interval: float = 0.5,
-        **additional_kwargs: Any,
-    ) -> Any:
         """
         Add filter step.
 
